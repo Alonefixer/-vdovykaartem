@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Monut Clicker</title>
+  <style>
+    /* Основные стили для страницы */
+    body {
+      background-color: #000000; /* Черный фон */
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Контейнер для камня и счётчика */
+    .container {
+      text-align: center;
+      max-width: 100%;
+      padding: 20px;
+    }
+
+    /* Стили для кнопки-кликера (камень) */
+    .stone {
+      width: 220px;
+      height: 220px;
+      background-image: url('assets/Stone.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 50%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: stoneAnimation 2s infinite ease-in-out;
+    }
+
+    /* Эффект пульсации камня */
+    @keyframes stoneAnimation {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .stone:active {
+      transform: scale(0.95); /* Эффект нажатия */
+    }
+
+    /* Счётчик кликов */
+    .counter {
+      margin-top: 20px;
+      font-size: 40px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Виртуальная валюта (алмазы) */
+    .diamonds {
+      margin-top: 10px;
+      font-size: 30px;
+      font-weight: bold;
+      color: #3498db; /* Синий цвет для алмазов */
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Задания */
+    .task {
+      margin-top: 30px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #f39c12; /* Цвет для задания */
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    .task-info {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #ecf0f1;
+    }
+
+    /* Футер с подписью */
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #aaa;
+      font-style: italic;
+    }
+
+    .footer a {
+      color: #aaa;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+      color: #f1c40f;
+    }
+
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 600px) {
+      .stone {
+        width: 180px;
+        height: 180px;
+      }
+
+      .counter {
+        font-size: 32px;
+      }
+
+      .diamonds {
+        font-size: 24px;
+      }
+
+      .footer {
+        font-size: 12px;
+      }
+
+      .task {
+        font-size: 20px;
+      }
+
+      .task-info {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .stone {
+        width: 150px;
+        height: 150px;
+        margin-bottom: 10px;
+      }
+
+      .counter {
+        font-size: 28px;
+        margin-top: 15px;
+      }
+
+      .diamonds {
+        font-size: 22px;
+      }
+
+      .footer {
+        font-size: 10px;
+        margin-top: 10px;
+      }
+
+      .task {
+        font-size: 18px;
+      }
+
+      .task-info {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Основной контейнер -->
+  <div class="container">
+    <!-- Камень -->
+    <div class="stone" id="stone"></div>
+    <!-- Счётчик кликов -->
+    <div class="counter" id="counter">0</div>
+    <!-- Алмазы -->
+    <div class="diamonds" id="diamonds">Алмазы: 0</div>
+    <!-- Задания -->
+    <div class="task" id="task">Задание: Нажми 50 раз</div>
+    <div class="task-info" id="task-info">Пока не выполнено</div>
+    <!-- Футер -->
+    <div class="footer">
+      By <a href="#">Vdovyka Artem</a>
+    </div>
+  </div>
+
+  <script>
+    // Предотвращаем масштабирование при двойном нажатии
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (event) => {
+      const now = new Date().getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    });
+
+    // Получение счётчика и алмазов из localStorage (или 0, если они не установлены)
+    let counter = parseInt(localStorage.getItem('counter')) || 0;
+    let diamonds = parseInt(localStorage.getItem('diamonds')) || 0;
+    let taskProgress = parseInt(localStorage.getItem('taskProgress')) || 0;
+
+    // Элементы счётчика, алмазов и камня
+    const counterDisplay = document.getElementById('counter');
+    const diamondsDisplay = document.getElementById('diamonds');
+    const stone = document.getElementById('stone');
+    const taskDisplay = document.getElementById('task');
+    const taskInfo = document.getElementById('task-info');
+
+    // Отображаем текущее значение счётчика и алмазов
+    counterDisplay.textContent = counter;
+    diamondsDisplay.textContent = `Алмазы: ${diamonds}`;
+    updateTaskDisplay();
+
+    // Функция для обновления задания
+    function updateTaskDisplay() {
+      if (taskProgress === 0) {
+        taskDisplay.textContent = 'Задание: Нажми 50 раз';
+        taskInfo.textContent = 'Пока не выполнено';
+      } else if (taskProgress === 1) {
+        taskDisplay.textContent = 'Задание: Нажми 100 раз';
+        taskInfo.textContent = 'Пока не выполнено';
+      } else if (taskProgress === 2) {
+        taskDisplay.textContent = 'Задание: Нажми 250 раз';
+        taskInfo.textContent = 'Пока не выполнено';
+      } else if (taskProgress === 3) {
+        taskDisplay.textContent = 'Задание: Нажми 500 раз';
+        taskInfo.textContent = 'Пока не выполнено';
+      } else if (taskProgress === 4) {
+        taskDisplay.textContent = 'Задание: Нажми 1000 раз';
+        taskInfo.textContent = 'Пока не выполнено';
+      } else {
+        taskDisplay.textContent = 'Все задания выполнены!';
+        taskInfo.textContent = '';
+      }
+    }
+
+    // Обработчик нажатия на камень
+    stone.addEventListener('click', () => {
+      counter++; // Увеличиваем счётчик
+
+      // Проверяем выполнение заданий
+      if (taskProgress === 0 && counter >= 50) {
+        diamonds += 1;
+        taskProgress = 1;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 1 && counter >= 100) {
+        diamonds += 5;
+        taskProgress = 2;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 2 && counter >= 250) {
+        diamonds += 15;
+        taskProgress = 3;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 3 && counter >= 500) {
+        diamonds += 50;
+        taskProgress = 4;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 4 && counter >= 1000) {
+        diamonds += 100;
+        taskProgress = 5;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      }
+
+      // Обновляем отображение
+      counterDisplay.textContent = counter;
+      diamondsDisplay.textContent = `Алмазы: ${diamonds}`;
+      localStorage.setItem('counter', counter); // Сохраняем счётчик
+    });
+
+    // Обработка для телефонов: включение кликов
+    stone.addEventListener('touchstart', (event) => {
+      event.preventDefault(); // Отключаем стандартное поведение
+      counter++; // Увеличиваем счётчик
+
+      // Проверяем выполнение заданий
+      if (taskProgress === 0 && counter >= 50) {
+        diamonds += 1;
+        taskProgress = 1;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 1 && counter >= 100) {
+        diamonds += 5;
+        taskProgress = 2;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 2 && counter >= 250) {
+        diamonds += 15;
+        taskProgress = 3;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 3 && counter >= 500) {
+        diamonds += 50;
+        taskProgress = 4;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      } else if (taskProgress === 4 && counter >= 1000) {
+        diamonds += 100;
+        taskProgress = 5;
+        localStorage.setItem('taskProgress', taskProgress);
+        localStorage.setItem('diamonds', diamonds);
+        updateTaskDisplay();
+      }
+
+      // Обновляем отображение
+      counterDisplay.textContent = counter;
+      diamondsDisplay.textContent = `Алмазы: ${diamonds}`;
+      localStorage.setItem('counter', counter); // Сохраняем счётчик
+    });
+  </script>
+</body>
+</html>
